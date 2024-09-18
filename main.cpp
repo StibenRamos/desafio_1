@@ -1,45 +1,93 @@
 #include <LiquidCrystal.h>
 
-int analogPin = 0;
+unsigned long tiempoInicio;
+unsigned long tiempoTranscurrido;
+int funGenerador = 1;
+float maxVal = 0;
+float minVal = 1023;
+float amplitud; // variable decimales
+float periodo; // decimales
+float frecuencia; // decimales
+int pul_1 = 13;
+int pul_2 = 7;
+int ledPul = 8;
 int val = 0;
-int Estado_Pul = 0; 
-unsigned long tiempoInicio = 0; 
-unsigned long tiempoFin = 0; 
-unsigned long tiempoPresionado = 0;
+int estPul_1 = LOW;
+int estPul_2 = LOW;
+int estLed = LOW;
+bool capturando = false; // Variable para saber si estamos capturando datos
+
+// Punteros
+
+float *pun_maxVal = &maxVal;
+float *pun_minVal = &minVal;
+
+// memoria
+
+int Tam = 10; // numero de espacios para los datos de la señal.
+int *pun_men = new int [Tam];
+int pos_arre = 0;  // registro de la posición actual en el arreglo donde se debe almacenar el próximo valor. en este caso la primera posición del arreglo comienza en 0.
 
 
 LiquidCrystal lcd_1(12, 11, 5, 4, 3, 2);
 
 void setup()
 {
-  pinMode(7, INPUT);
-  Serial.begin(9600);
-  lcd_1.begin(16, 2);
+    pinMode(pul_1, INPUT);
+    pinMode(pul_2, INPUT);
+    pinMode(ledPul, OUTPUT);
+    Serial.begin(9600);
+    lcd_1.begin(16, 2);
+    tiempoInicio = millis();
 }
 
 void loop()
 {
-  val = analogRead(analogPin);
-  Serial.println(val);
-  lcd_1.setCursor(0, 0);
-  lcd_1.print("Tiempo: ");
-  lcd_1.print(Tiempo());
-  lcd_1.print(" ms");
-}
+    estPul_1 = digitalRead(pul_1);
+    estPul_2 = digitalRead(pul_2);
 
-unsigned long Tiempo(){
-  	delay(1000);
-	Estado_Pul = digitalRead(7);
-    if (Estado_Pul == HIGH) { 
-    if (tiempoInicio == 0) { // Si es la primera vez que se presiona   
-      tiempoInicio = millis(); 
+    if(estPul_1 == HIGH && !capturando){
+        capturando = true;
+        digitalWrite(ledPul, HIGH);
+        lcd_1.clear();
+        lcd_1.setCursor(0, 0);
+        lcd_1.print("Capturando...");
     }
-    } else { 
-    if (tiempoInicio != 0) { // Si se había presionado antes
-      tiempoFin = millis(); // Guarda el tiempo de fin
-      tiempoPresionado = tiempoFin - tiempoInicio;
-      tiempoInicio = 0; // Resetea el tiempo de inicio para la próxima vez
+
+    if(estPul_2 == HIGH && capturando){
+        capturando = false;
+        digitalWrite(ledPul, LOW);
+        lcd_1.clear();
+        lcd_1.setCursor(0, 0);
+        lcd_1.print("Tiempo: ");
+        lcd_1.print(tiempoTranscurrido);
+        lcd_1.print(" ms");
     }
-  }
-  return tiempoPresionado;
+
+    if(capturando){
+        val = analogRead(funGenerador);
+        pun_men[pos_arre] = val;
+        pos_arre = (pos_arre + 1) % Tam;
+
+        if(val > *pun_maxVal){
+            *pun_maxVal = val;
+        }
+        if (val < *pun_minVal){
+            *pun_minVal = val;
+        }
+        amplitud= (maxVal - minVal) * (5.0/1023.0);
+
+        if (val > 0) {
+            tiempoTranscurrido = millis();
+            periodo = tiempoTranscurrido - tiempoInicio;
+            frecuencia = 1000.0 / periodo;
+            tiempoInicio = tiempoTranscurrido;
+        }
+
+        Serial.print(val);
+        Serial.print(", A:");
+        Serial.print(amplitud);
+        Serial.print(", F :");
+        Serial.println(frecuencia);
+    }
 }
