@@ -2,12 +2,12 @@
 
 unsigned long tiempoInicio;
 unsigned long tiempoTranscurrido;
-int funGenerador = 1;
-float maxVal = 0;
+int funGenerador = 0;
+float maxVal = -1023;
 float minVal = 1023;
-float amplitud; // variable decimales
-float periodo; // decimales
-float frecuencia; // decimales
+float amplitud;
+float periodo;
+float frecuencia;
 int pul_1 = 13;
 int pul_2 = 7;
 int ledPul = 8;
@@ -27,7 +27,6 @@ float *pun_minVal = &minVal;
 int Tam = 10; // numero de espacios para los datos de la señal.
 int *pun_men = new int [Tam];
 int pos_arre = 0;  // registro de la posición actual en el arreglo donde se debe almacenar el próximo valor. en este caso la primera posición del arreglo comienza en 0.
-
 
 LiquidCrystal lcd_1(12, 11, 5, 4, 3, 2);
 
